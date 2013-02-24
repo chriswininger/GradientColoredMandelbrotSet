@@ -72,6 +72,38 @@
             return false;
         });
 
+        $('#fileGradientPicker').change(function(e) {
+            var files = e.target.files; // FileList object
+
+            // files is a FileList of File objects. List some properties.
+            //var output = [];
+            for (var i = 0, f; f = files[i]; i++) {
+                // Only process image files.
+                if (!f.type.match('image.*')) {
+                    continue;
+                }
+
+                var reader = new FileReader();
+
+                // Closure to capture the file information.
+                reader.onload = function(event) {
+                    // Update gradient preview
+                    $('#gradient-preview').css({
+                       backgroundImage: 'url("' + event.target.result + '")'
+                   });
+                    // Update Gradient image
+                    $('#imgGradient').attr('src', event.target.result);
+
+                    // refresh gradient and fractal
+                    gradient = loadGradientLine(imgGradient[0]);
+                    imgData = renderApplication(startX, endX, startY, endY, ctx, canvas, gradient);
+                };
+
+                // Read in the image file as a data URL.
+                reader.readAsDataURL(f);
+            }
+        });
+
         // Track mouse position on the canvas
         var currentCoordinate = false;
         canvas.mousemove(function(event){
