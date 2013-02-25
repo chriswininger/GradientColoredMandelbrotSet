@@ -2,45 +2,11 @@
 <html>
 <head>
     <title>Mandelbrot-Set</title>
-    <script src = "http://code.jquery.com/jquery-1.8.3.js" type = "text/javascript"></script>
-    <script src = "http://code.jquery.com/ui/1.9.2/jquery-ui.js" type = "text/javascript"></script>
+
+    <script src = "lib/jquery-1.9.1.js" type = "text/javascript"></script>
     <script src = "gradient-colored-mandelbrot.js" type = "text/javascript"></script>
 
-    <link href = "http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet" type="text/css">
-
-    <style type="text/css">
-        #cvsMandelbrot
-        {
-            border: 1px solid black;
-        }
-
-        .mandelbrot-controls, .point-set, .gradient-picker>div {
-            margin-top: .5em;
-        }
-
-       /* #mandelbrot-display-wrapper>div {
-            min-height: 500px;
-            vertical-align: top;
-        }*/
-
-
-        #gradient-preview {
-            border: 1px solid black;
-            width: 250px;
-            height: 50px;
-            background: url('1px_gradientstrip_v3.jpeg') repeat-y;
-        }
-
-        #imgGradient
-        {
-            display: none;
-        }
-
-        #divTopLabels
-        {
-            width: 100%;
-        }
-    </style>
+    <link href = "style.css" type = "text/css" rel = "stylesheet">
 
 </head>
 <body>
@@ -68,35 +34,38 @@
             <div id = "gradient-preview"></div>
         </div>
 
+        <hr/>
+
         <div class = "point-set">
             <span>
-                <label for="inputX1">X1: </label>
+                <label for = "inputX1">X1: </label>
                 <input id= "inputX1" type="text">,
             </span>
             <span>
-               <label for="inputX2">X2: </label>
+               <label for = "inputX2">X2: </label>
                <input id= "inputX2" type="text">
             </span>
         </div>
 
         <div class = "point-set">
             <span>
-                <label for="inputY1">X1: </label>
-                <input id= "inputY1" type="text">,
+                <label for = "inputY1">X1: </label>
+                <input id = "inputY1" type="text">,
             </span>
             <span>
-                <label for="inputY2">X1: </label>
+                <label for = "inputY2">X1: </label>
                 <input id= "inputY2" type="text">
             </span>
         </div>
 
         <div>
-            <button id="btnUpdateMandelbrot">Set Coordinates</button>
+            <button id = "btnUpdateMandelbrot">Set Coordinates</button>
+            <button id = "btnDefault">Restore Defaults</button>
         </div>
     </div>
 
     <div>
-        <img id = "imgGradient" src = "1px_gradientstrip_v3.jpeg" alt="gradient-temp-img">
+        <img id = "imgGradient" src = "images/1px_gradientstrip_v3.jpeg" alt="gradient-temp-img">
     </div>
 </body>
 </html>

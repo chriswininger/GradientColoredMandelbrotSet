@@ -36,8 +36,18 @@
 
 // Mandelbrot Set Code
 (function(){
-    var canvasWidth = 500, canvasHeight = 400, startX = -2.00, endX = 1.00, startY = -1.00, endY = 1.00;
-    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblMouseStatus = false;
+    // Defaults
+    var defaultStartX = -2.00, defaultEndX = 1.00, defaultStartY = -1.00, defaultEndY = 1.00;
+    // Mandelbrot state information
+    var startX = defaultStartX, endX = defaultEndX, startY = defaultStartY, endY = defaultEndY;
+    var canvasWidth = 500, canvasHeight = 400;
+    // Cached controls
+    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false;
+    // UI state information
+    var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false;
+    var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
+    // Rendering Elements
+    var canvas = false, ctx = false, imgGradient = false, imgData, gradient;
 
     window.onload = function() {
         // Cache form queries
@@ -45,34 +55,91 @@
         txtX2 = $('#inputX2');
         txtY1 = $('#inputY1');
         txtY2 = $('#inputY2');
+        lblStatus = $('#lblStatus');
         lblMouseStatus = $('#lblMouseStatus');
 
-
-        var canvas = $('#cvsMandelbrot'); // Find the canvas
+        canvas = $('#cvsMandelbrot'); // Find the canvas
         canvasWidth = canvas.width();
-        canvaseHeight = canvas.height();
-        //$(canvas).css('width', canvasWidth).css('height', canvasHeight); // Set the canvas height and width
+        canvasHeight = canvas.height();
 
+        ctx = canvas[0].getContext('2d');
+        imgGradient = $('#imgGradient');
 
-        var ctx = canvas[0].getContext('2d');
-        var imgGradient = $('#imgGradient');
-
-
-
-        // Display default values
-        setRangeValuesOnForm();
         // Draw the figure on load
-        var gradient = loadGradientLine(imgGradient[0]);
-        var imgData = renderApplication(startX, endX, startY, endY, ctx, canvas, gradient);
+        //args.startX, args.endX, args.startY, args.endY, args.ctx, args.gradient
+        gradient = loadGradientLine(imgGradient[0]);
+        imgData = renderApplication(startX, endX, startY, endY, ctx, gradient);
 
-        // update the figure on the update button press
+        // ---- Wire update button clicked ----
         $('#btnUpdateMandelbrot').click(function(){
-            getRangeValuesFromForm();
-            imgData = renderApplication(startX, endX, startY, endY, ctx, canvas, gradient);
+            updateState(getRangeValuesFromForm());
             return false;
         });
 
-        $('#fileGradientPicker').change(function(e) {
+        // ---- Default Button Clicked ----
+        $('#btnDefault').click(function(){
+            updateState({'startX': defaultStartX, 'endX': defaultEndX, 'startY': defaultStartY, 'endY': defaultEndY });
+        });
+
+        // ---- Wire Gradient File picker event ----
+        $('#fileGradientPicker').change(fileGradientPicker_change);
+
+        // ---- Wire Mouse Events ----
+        canvas.mousedown(cvsMandelbrot_mousedown);
+        canvas.mouseup(cvsMandelbrot_mouseup);
+        canvas.mousemove(cvsMandelbrot_mousemove);
+        canvas.contextmenu(function(event) {
+            return false; // prevent menu from showing on right click
+        });
+
+        // ---- Track Mouse Movements on the canvas ----
+        function cvsMandelbrot_mousemove (event) {
+            var x =  event.pageX - this.offsetLeft;
+            var y =  event.pageY - this.offsetTop;
+            // Store the current coordinates
+            currentCoordinate = {'x': x, 'y': y};
+            // Translate the current coordinates into the components of a complex number
+            var real = Math.map(x, 0, canvasWidth, startX, endX);
+            var imaginary = Math.map(y, 0, canvasHeight, startY, endY);
+
+            if (mouseDown) {
+                draw();
+            }
+
+            // Display the mouse coordinates as translated onto the complex number plane
+            lblMouseStatus.text(real + ' X ' + imaginary);
+        }
+
+        // ---- Mouse Down on Canvas ----
+        function cvsMandelbrot_mousedown (event) {
+            switch (event.which) {
+                case 1:
+                    downCoordinate = {'x': event.pageX - this.offsetLeft, 'y': event.pageY - this.offsetTop};
+                    mouseDown = true;
+                    break;
+                case 3:
+                    history_stepBack();
+                    break
+            }
+        }
+
+        // ---- Mouse Released on Canvas ----
+        function cvsMandelbrot_mouseup (event) {
+
+            if (event.which === 1) {
+                var new_startX = Math.map(downCoordinate.x, 0, canvasWidth, startX, endX);
+                var new_endX = Math.map(currentCoordinate.x , 0, canvasWidth, startX, endX);
+                var new_startY = Math.map(downCoordinate.y, 0, canvasHeight, startY, endY);
+                var new_endY = Math.map(currentCoordinate.y, 0, canvasHeight, startY, endY);
+
+                updateState({startX: new_startX, startY: new_startY, endX: new_endX, endY: new_endY});
+                mouseDown = false;
+            }
+
+        }
+
+        // ---- Gradient File Chosen ----
+        function fileGradientPicker_change(e) {
             var files = e.target.files; // FileList object
 
             // files is a FileList of File objects. List some properties.
@@ -89,72 +156,20 @@
                 reader.onload = function(event) {
                     // Update gradient preview
                     $('#gradient-preview').css({
-                       backgroundImage: 'url("' + event.target.result + '")'
-                   });
+                        backgroundImage: 'url("' + event.target.result + '")'
+                    });
                     // Update Gradient image
                     $('#imgGradient').attr('src', event.target.result);
 
                     // refresh gradient and fractal
                     gradient = loadGradientLine(imgGradient[0]);
-                    imgData = renderApplication(startX, endX, startY, endY, ctx, canvas, gradient);
+                    imgData = renderApplication(startX, endX, startY, endY, ctx, gradient);
                 };
 
                 // Read in the image file as a data URL.
                 reader.readAsDataURL(f);
             }
-        });
-
-        // Track mouse position on the canvas
-        var currentCoordinate = false;
-        canvas.mousemove(function(event){
-            var parentOffset = $(this).parent().offset();
-
-            var x = 0, y = 0;
-
-            x =  event.pageX - this.offsetLeft;
-            y =  event.pageY - this.offsetTop;
-
-            currentCoordinate = {'x': x, 'y': y};
-
-            var real = Math.map(x, 0, canvasWidth, startX, endX);
-            var imaginary = Math.map(y, 0, canvaseHeight, startY, endY);
-
-            if (mouseDown) {
-                draw();
-            }
-
-            lblMouseStatus.text(real + ' X ' + imaginary);
-        });
-
-        // Track when mouse is down
-        var mouseDown = false;
-        var downCoordinate = false;
-        canvas.mousedown(function(event){
-            x =  event.pageX - this.offsetLeft;
-            y =  event.pageY - this.offsetTop;
-
-            downCoordinate = {'x': x, 'y': y};
-
-            mouseDown = true;
-        });
-
-        canvas.mouseup(function(event) {
-            var new_startX = Math.map(downCoordinate.x, 0, canvasWidth, startX, endX);
-            var new_endX = Math.map(currentCoordinate.x , 0, canvasWidth, startX, endX);
-            var new_startY = Math.map(downCoordinate.y, 0, canvasHeight, startY, endY);
-            var new_endY = Math.map(currentCoordinate.y, 0, canvasHeight, startY, endY);
-
-            startX = new_startX;
-            startY = new_startY;
-            endX = new_endX;
-            endY = new_endY;
-
-            setRangeValuesOnForm();
-
-            imgData = renderApplication(startX, endX, startY, endY, ctx, canvas, gradient);
-
-            mouseDown = false;
-        });
+        }
 
         function draw() {
             ctx.clearRect(0, 0, canvasWidth, canvasHeight); // clear the frame
@@ -169,13 +184,21 @@
         }
     };
 
+    /**
+     * Retrieve values from the text box on the form and use them to update the state of the mandelbrot
+     */
     function getRangeValuesFromForm() {
-        startX = parseFloat(txtX1.val());
-        endX = parseFloat(txtX2.val());
-        startY = parseFloat(txtY1.val());
-        endY = parseFloat(txtY2.val());
+        return {
+            'startX': parseFloat(txtX1.val()),
+            'endX': parseFloat(txtX2.val()),
+            'startY': parseFloat(txtY1.val()),
+            'endY': parseFloat(txtY2.val())
+        };
     }
 
+    /**
+     * Set the values in the text boxes on the form to represent the current state of the mandelbrot
+     */
     function setRangeValuesOnForm() {
         txtX1.val(startX);
         txtX2.val(endX);
@@ -183,25 +206,62 @@
         txtY2.val(endY);
     }
 
-    function renderApplication(startX, endX, startY, endY, ctx, canvas, gradient) {
-        t_time_escape_calc = 0.0
+    function updateState(new_values, omitHistory /* Optional bool */) {
+        if (!omitHistory) {
+            // commit current state to history
+            stateHistory.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY });
+        }
 
-        $('#lblStatus').text('Loading...');
+        // Store the path taken by the user for generation of zoom video
+        keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY });
+
+        // Update the current state
+        startX = new_values.startX;
+        startY = new_values.startY;
+        endX = new_values.endX;
+        endY = new_values.endY;
+
+        imgData = renderApplication(startX, endX, startY, endY, ctx, gradient);
+    }
+
+    function history_stepBack() {
+        if (stateHistory.length > 0) {
+            updateState(stateHistory.pop(), true);
+        }
+    }
+
+    /**
+     * Generate the mandelbrot image based on the current state and render it on the form, along with data for text fields
+     * @param startX
+     * @param endX
+     * @param startY
+     * @param endY
+     * @param ctx
+     * @param gradient
+     * @return {*}
+     */
+    function renderApplication(startX, endX, startY, endY, ctx, gradient) {
+        // Display the current mandelbrot state on the form
+        setRangeValuesOnForm();
+
+        lblStatus.html('Loading...');
+        lblMouseStatus.text('');
+
         var startTime = new Date().getTime();
 
-        var imgData = drawMandelbrotSet(startX, endX, startY, endY, ctx, canvas, gradient); // Draw the set
+        var imgData = drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient); // Draw the set
 
         var endTime = new Date().getTime();
         var timeTaken = endTime - startTime;
 
         // Update the UI, indicating that processing is complete
-        $('#lblStatus').text('Done ');
+        lblStatus.text('Done ');
         $('#lblSetInfo').text('Showing [' + startX + ' - ' + endX + '] x [' + startY + ' x ' + endY + '] Completed in: ' + timeTaken + ' ms');
 
         return imgData;
     }
 
-    function drawMandelbrotSet(startX, endX, startY, endY, ctx, canvas, gradient) {
+    function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {
         // get the image data for the graphics context
         var imageData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
 
