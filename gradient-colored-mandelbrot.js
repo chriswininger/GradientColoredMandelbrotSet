@@ -24,13 +24,13 @@
             data[r + 1] = c[1];
             data[r + 2] = c[2];
             data[r + 3] = c[3];
-        }
+        };
 
         ImageData.prototype.getPixel = function (x, y) {
             var data = this.data;
             var r = 4 * (x + y * this.width);
             return [data[r], data[r + 1], data[r + 2], data[r + 3]];
-        }
+        };
     }
 })();
 
@@ -47,7 +47,9 @@
     var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false;
     var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
     // Rendering Elements
-    var canvas = false, ctx = false, imgGradient = false, imgData, gradient;
+    var canvas = false, ctx = false, imgGradient = false, imgData = false, gradient = false;
+    // Worker thereads
+    var workerFractal = false;
 
     window.onload = function() {
         // Cache form queries
@@ -68,7 +70,13 @@
         // Draw the figure on load
         //args.startX, args.endX, args.startY, args.endY, args.ctx, args.gradient
         gradient = loadGradientLine(imgGradient[0]);
-        imgData = renderApplication(startX, endX, startY, endY, ctx, gradient);
+
+        // Create the worker thread and wire a function to handel the rendering completion
+        workerFractal = new Worker('gradient-colored-mandelbrot-gen-thread.js');
+        workerFractal.onmessage = renderComplete;
+
+        // render the fractal
+        renderApplication(startX, endX, startY, endY, ctx, gradient);
 
         // ---- Wire update button clicked ----
         $('#btnUpdateMandelbrot').click(function(){
@@ -163,7 +171,7 @@
 
                     // refresh gradient and fractal
                     gradient = loadGradientLine(imgGradient[0]);
-                    imgData = renderApplication(startX, endX, startY, endY, ctx, gradient);
+                    renderApplication(startX, endX, startY, endY, ctx, gradient);
                 };
 
                 // Read in the image file as a data URL.
@@ -221,7 +229,7 @@
         endX = new_values.endX;
         endY = new_values.endY;
 
-        imgData = renderApplication(startX, endX, startY, endY, ctx, gradient);
+        renderApplication(startX, endX, startY, endY, ctx, gradient);
     }
 
     function history_stepBack() {
@@ -231,14 +239,13 @@
     }
 
     /**
-     * Generate the mandelbrot image based on the current state and render it on the form, along with data for text fields
+     * Passes data to the rendering thread through a post message, the results when the be posted back by this thread and handled in renderComplete
      * @param startX
      * @param endX
      * @param startY
      * @param endY
      * @param ctx
      * @param gradient
-     * @return {*}
      */
     function renderApplication(startX, endX, startY, endY, ctx, gradient) {
         // Display the current mandelbrot state on the form
@@ -247,18 +254,30 @@
         lblStatus.html('Loading...');
         lblMouseStatus.text('');
 
-        var startTime = new Date().getTime();
+        if (!imgData) {
+            imgData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
+        }
+        workerFractal.postMessage({
+            'startX': startX,
+            'endX': endX,
+            'startY': startY,
+            'endY': endY,
+            'imageData': imgData,
+            'gradient': gradient,
+            'canvasWidth': canvasWidth,
+            'canvasHeight': canvasHeight
+        });
+    }
 
-        var imgData = drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient); // Draw the set
+    function renderComplete(event) {
+        // Paint the image
+        imgData = event.data.imageData; // cache image for repainting the screen
+        ctx.putImageData(event.data.imageData,0,0); // paint the image
 
-        var endTime = new Date().getTime();
-        var timeTaken = endTime - startTime;
 
         // Update the UI, indicating that processing is complete
-        lblStatus.text('Done ');
-        $('#lblSetInfo').text('Showing [' + startX + ' - ' + endX + '] x [' + startY + ' x ' + endY + '] Completed in: ' + timeTaken + ' ms');
-
-        return imgData;
+        lblStatus.text('Done');
+        $('#lblSetInfo').text('Showing [' + startX + ' - ' + endX + '] x [' + startY + ' x ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
     }
 
     function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {

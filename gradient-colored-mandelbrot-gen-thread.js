@@ -6,6 +6,42 @@
  * About: This file contains the worker thread which generates the actual image of the mandelbrot to be rendered in a canvas element
  */
 
+// Extend JavaScript API with useful functions
+(function() {
+    "use strict";
+
+    if (typeof Math !== 'undefined') {
+        // Map val from a coordinate plane bounded by x1, x2 onto a coordinate plane bounded by y1, y2
+            Math.map = function(val, x1, x2, y1, y2) {
+            return (val -x1)/(Math.abs(x2-x1)) * Math.abs(y2 -y1) + y1;
+        }
+    }
+
+    if (typeof ImageData !== 'undefined') {
+        /**
+         * Set the color values for the pixel at the specified x, y index
+         * @param c [r,g,b,a]
+         * @param x
+         * @param y
+         */
+        ImageData.prototype.setPixel = function (c, x, y) {
+            var data = this.data;
+            var r = 4 * (x + y * this.width);
+
+            data[r] = c[0];
+            data[r + 1] = c[1];
+            data[r + 2] = c[2];
+            data[r + 3] = c[3];
+        };
+
+        ImageData.prototype.getPixel = function (x, y) {
+            var data = this.data;
+            var r = 4 * (x + y * this.width);
+            return [data[r], data[r + 1], data[r + 2], data[r + 3]];
+        };
+    }
+})();
+
 /**
  *
  * @param event
@@ -17,17 +53,27 @@
  *      canvasHeight
  *      gradient
  */
+
+
 self.onmessage = function(event) {
     var args = event.data;
 
-    var imgData = drawMandelbrotSet(args.startX, args.endX, args.startY, args.endY, args.ctx, args.gradient);
-    self.postMessage(imgData);
+
+    var startTime = new Date().getTime();
+    // generate the figure
+    drawMandelbrotSet(args.startX, args.endX, args.startY, args.endY, args.imageData, args.gradient, args.canvasWidth, args.canvasHeight);
+    // Calculate time taken
+    var endTime = new Date().getTime();
+    var timeTaken = endTime - startTime;
+
+    // post back figure to main thread
+    self.postMessage({'imageData': args.imageData, 'timeTaken': timeTaken });
 };
 
 
-function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {
+function drawMandelbrotSet(startX, endX, startY, endY, imageData, gradient, canvasWidth, canvasHeight) {
     // get the image data for the graphics context
-    var imageData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
+    //var imageData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
 
     // Iterate over all pixels in our canvas and paint their value
     for (var x = 0; x < canvasWidth; x++) {
@@ -42,9 +88,9 @@ function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {
         }
     }
 
-    ctx.putImageData(imageData,0,0);
+    //ctx.putImageData(imageData,0,0);
 
-    return imageData;
+    //return imageData;
 }
 
 function mandelbrotSetEscapeRate(cReal, cImaginary) {
