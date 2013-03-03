@@ -3,9 +3,13 @@
     border: 1px solid black;
 }
 
-.mandelbrot-controls, .point-set, .gradient-picker>div {
+.point-set, .gradient-picker>div {
     margin-top: .5em;
     margin-bottom: .5em;
+}
+
+.mandelbrot-controls {
+    margin: 0 1em 0 1em;
 }
 
 /* #mandelbrot-display-wrapper>div {
@@ -29,4 +33,20 @@
 #divTopLabels
 {
     width: 100%;
+}
+
+/* ---- Table Layout ---- */
+.mandelbrot-colored-table {
+    display: table;
+}
+
+.mandelbrot-colored-table-row {
+    display: table-row;
+}
+
+.mandelbrot-colored-table-cell {
+    display: table-cell;
+    min-height: 425px;
+    vertical-align: top;
+    margin: .5em;
 }

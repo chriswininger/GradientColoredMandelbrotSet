@@ -42,9 +42,9 @@
     var startX = defaultStartX, endX = defaultEndX, startY = defaultStartY, endY = defaultEndY;
     var canvasWidth = 500, canvasHeight = 400;
     // Cached controls
-    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false;
+    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false;
     // UI state information
-    var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false;
+    var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false, keepProportions = true;
     var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
     // Rendering Elements
     var canvas = false, ctx = false, imgGradient = false, imgData = false, gradient = false;
@@ -58,7 +58,11 @@
         txtY1 = $('#inputY1');
         txtY2 = $('#inputY2');
         lblStatus = $('#lblStatus');
+        chkMandelbrotColorMaintainRatio = $('#chkMandelbrotColorMaintainRatio');
         lblMouseStatus = $('#lblMouseStatus');
+
+        // update keep proportions
+        keepProportions = chkMandelbrotColorMaintainRatio.is(':checked');
 
         canvas = $('#cvsMandelbrot'); // Find the canvas
         canvasWidth = canvas.width();
@@ -84,6 +88,11 @@
             return false;
         });
 
+        // ---- Wire up keep proportions check box ----
+        chkMandelbrotColorMaintainRatio.change(function(event){
+            keepProportions = $(this).is(':checked');
+        });
+
         // ---- Default Button Clicked ----
         $('#btnDefault').click(function(){
             updateState({'startX': defaultStartX, 'endX': defaultEndX, 'startY': defaultStartY, 'endY': defaultEndY });
@@ -100,10 +109,11 @@
             return false; // prevent menu from showing on right click
         });
 
+
         // ---- Track Mouse Movements on the canvas ----
         function cvsMandelbrot_mousemove (event) {
-            var x =  event.pageX - this.offsetLeft;
-            var y =  event.pageY - this.offsetTop;
+            var x =  event.pageX - $(this).position().left;
+            var y =  event.pageY - $(this).position().top;
             // Store the current coordinates
             currentCoordinate = {'x': x, 'y': y};
             // Translate the current coordinates into the components of a complex number
@@ -111,7 +121,17 @@
             var imaginary = Math.map(y, 0, canvasHeight, startY, endY);
 
             if (mouseDown) {
-                draw();
+                // Update  selection box coordinates
+                selectionRect.x1 = downCoordinate.x;
+                selectionRect.y1 = downCoordinate.y;
+                selectionRect.x2 = currentCoordinate.x;
+                if (keepProportions) {
+                    selectionRect.y2 = downCoordinate.y + (currentCoordinate.x - downCoordinate.x) * 0.8; // calculate y2 as a proportion of xx
+                } else {
+                    selectionRect.y2 = currentCoordinate.y; // just use the current mouse coordinate for y2
+                }
+
+                draw(); // Update the rendering
             }
 
             // Display the mouse coordinates as translated onto the complex number plane
@@ -122,7 +142,7 @@
         function cvsMandelbrot_mousedown (event) {
             switch (event.which) {
                 case 1:
-                    downCoordinate = {'x': event.pageX - this.offsetLeft, 'y': event.pageY - this.offsetTop};
+                    downCoordinate = {'x': event.pageX - $(this).position().left, 'y': event.pageY - $(this).position().top };
                     mouseDown = true;
                     break;
                 case 3:
@@ -135,12 +155,27 @@
         function cvsMandelbrot_mouseup (event) {
 
             if (event.which === 1) {
-                var new_startX = Math.map(downCoordinate.x, 0, canvasWidth, startX, endX);
-                var new_endX = Math.map(currentCoordinate.x , 0, canvasWidth, startX, endX);
-                var new_startY = Math.map(downCoordinate.y, 0, canvasHeight, startY, endY);
-                var new_endY = Math.map(currentCoordinate.y, 0, canvasHeight, startY, endY);
 
+                if (selectionRect.x2 - selectionRect.x1 >= 0) {
+                    var new_startX = Math.map(selectionRect.x1, 0, canvasWidth, startX, endX);
+                    var new_endX = Math.map(selectionRect.x2 , 0, canvasWidth, startX, endX);
+                } else { // The rectangle is being drawn in the negative direction
+                    var new_startX = Math.map(selectionRect.x2 , 0, canvasWidth, startX, endX);
+                    var new_endX =  Math.map(selectionRect.x1, 0, canvasWidth, startX, endX);
+                }
+
+                if (selectionRect.y2 - selectionRect.y1 >= 0) {
+                    var new_startY = Math.map(selectionRect.y1, 0, canvasHeight, startY, endY);
+                    var new_endY = Math.map(selectionRect.y2, 0, canvasHeight, startY, endY);
+                } else { // The rectangle is being drawn in the negative direction
+                    var new_startY = Math.map(selectionRect.y2, 0, canvasHeight, startY, endY);
+                    var new_endY = Math.map(selectionRect.y1, 0, canvasHeight, startY, endY);
+                }
+
+
+                // Update the application -- will cause redraw
                 updateState({startX: new_startX, startY: new_startY, endX: new_endX, endY: new_endY});
+
                 mouseDown = false;
             }
 
@@ -179,6 +214,7 @@
             }
         }
 
+        var selectionRect = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0};
         function draw() {
             ctx.clearRect(0, 0, canvasWidth, canvasHeight); // clear the frame
 
@@ -186,8 +222,24 @@
 
             if (currentCoordinate && downCoordinate) {
                 // draw the rectangle
-                ctx.strokeStyle = "rgb(255,255,255)";
-                ctx.strokeRect(downCoordinate.x, downCoordinate.y, Math.abs(currentCoordinate.x - downCoordinate.x),Math.abs(currentCoordinate.y - downCoordinate.y));
+                ctx.strokeStyle = 'rgb(255,255,255)';
+
+                // draw rectangle that maintains the original ratio based current x coordinate
+                ctx.strokeRect(
+                    selectionRect.x1,
+                    selectionRect.y1,
+                    selectionRect.x2 - selectionRect.x1,
+                    selectionRect.y2 - selectionRect.y1
+                );
+
+                ctx.beginPath();
+                ctx.arc(selectionRect.x2, selectionRect.y2, 5, 0 , 2 * Math.PI, false);
+                ctx.fillStyle = 'green';
+                ctx.fill();
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#003300';
+                ctx.stroke();
+
             }
         }
     };
@@ -277,7 +329,7 @@
 
         // Update the UI, indicating that processing is complete
         lblStatus.text('Done');
-        $('#lblSetInfo').text('Showing [' + startX + ' - ' + endX + '] x [' + startY + ' x ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
+        $('#lblSetInfo').text('Showing [' + startX + ' to ' + endX + '] x [' + startY + ' to ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
     }
 
     function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {

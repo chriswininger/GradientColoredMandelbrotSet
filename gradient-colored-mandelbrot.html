@@ -15,54 +15,80 @@
         <span id = "lblMouseStatus"></span>
     </div>
 
-    <div id = "mandelbrot-display-wrapper">
-        <div>
-            <canvas width = "500px" height="400px" id= "cvsMandelbrot">
-            </canvas>
-            <div>
-                <span id= "lblSetInfo"></span>
+    <div class = "mandelbrot-colored-table">
+        <div class="mandelbrot-colored-table-row">
+
+            <div class="mandelbrot-colored-table-cell">
+                <!-- Display Column -->
+                <div id = "mandelbrot-display-wrapper">
+                    <div>
+                        <canvas width = "500px" height="400px" id= "cvsMandelbrot">
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="mandelbrot-colored-table-cell">
+                <div class="mandelbrot-colored-table-cell">
+                    <!-- Controls Column -->
+                    <div class = "mandelbrot-controls">
+
+                        <div class = "point-set">
+                            <span>
+                                <label for = "inputX1">X1: </label>
+                                <input id= "inputX1" type="text">,
+                            </span>
+                            <span>
+                               <label for = "inputX2">X2: </label>
+                               <input id= "inputX2" type="text">
+                            </span>
+                                    </div>
+
+                                    <div class = "point-set">
+                            <span>
+                                <label for = "inputY1">X1: </label>
+                                <input id = "inputY1" type="text">,
+                            </span>
+                            <span>
+                                <label for = "inputY2">X1: </label>
+                                <input id= "inputY2" type="text">
+                            </span>
+                        </div>
+
+                        <div>
+                            <button id = "btnUpdateMandelbrot">Set Coordinates</button>
+                            <button id = "btnDefault">Restore Defaults</button>
+                        </div>
+
+                        <hr/>
+
+                        <div class = "gradient-picker">
+                            <label for = "fileGradientPicker">Choose Gradient: </label>
+                            <input type = "file" id="fileGradientPicker">
+                            <div id = "gradient-preview"></div>
+                        </div>
+
+                        <hr />
+
+                        <div class = "selector-controls">
+                            <label for="chkMandelbrotColorMaintainRatio">Keep Proportions</label>
+                            <input id="chkMandelbrotColorMaintainRatio" type="checkbox" checked="checked">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Status about display and run time -->
+    <div>
+        <span id= "lblSetInfo"></span>
+    </div>
+
     <hr />
 
-    <div class = "mandelbrot-controls">
-        <div class = "gradient-picker">
-            <label for = "fileGradientPicker">Choose Gradient: </label>
-            <input type = "file" id="fileGradientPicker">
-            <div id = "gradient-preview"></div>
-        </div>
 
-        <hr/>
-
-        <div class = "point-set">
-            <span>
-                <label for = "inputX1">X1: </label>
-                <input id= "inputX1" type="text">,
-            </span>
-            <span>
-               <label for = "inputX2">X2: </label>
-               <input id= "inputX2" type="text">
-            </span>
-        </div>
-
-        <div class = "point-set">
-            <span>
-                <label for = "inputY1">X1: </label>
-                <input id = "inputY1" type="text">,
-            </span>
-            <span>
-                <label for = "inputY2">X1: </label>
-                <input id= "inputY2" type="text">
-            </span>
-        </div>
-
-        <div>
-            <button id = "btnUpdateMandelbrot">Set Coordinates</button>
-            <button id = "btnDefault">Restore Defaults</button>
-        </div>
-    </div>
 
     <div>
         <img id = "imgGradient" src = "images/1px_gradientstrip_v3.jpeg" alt="gradient-temp-img">
