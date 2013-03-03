@@ -44,11 +44,11 @@
     // Cached controls
     var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false;
     // UI state information
-    var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false, keepProportions = true;
+    var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false, keepProportions = true, playingBack = false;
     var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
     // Rendering Elements
     var canvas = false, ctx = false, imgGradient = false, imgData = false, gradient = false;
-    // Worker thereads
+    // Worker threads
     var workerFractal = false;
 
     window.onload = function() {
@@ -83,8 +83,75 @@
         renderApplication(startX, endX, startY, endY, ctx, gradient);
 
         // ---- Wire update button clicked ----
-        $('#btnUpdateMandelbrot').click(function(){
+        $('#btnUpdateMandelbrot').click(function(event){
             updateState(getRangeValuesFromForm());
+            return false;
+        });
+
+        // ---- Wire playback button click ----
+        $('#btnMandelbrotColorPlay').click(function(event){
+            // Simple Playback
+            /*playingBack = true;
+
+            for (var i = 0; i < keyFrames.length; i++){
+                var keyFrame = keyFrames[i];
+
+                updateState(keyFrame);
+            }
+
+            playingBack = false;*/
+
+            // temporarily push current key frame to stack
+            keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY});
+
+            // Generate video
+            var interpolatedStates = [];
+            var lastKeyFrame = false;
+            for (var i = 0; i < keyFrames.length; i++){
+                var keyFrame = keyFrames[i];
+                if (lastKeyFrame === false) {
+                    interpolatedStates.push(keyFrame); // copy first frame
+                } else {
+                    // interpolate between frames
+                    var spanStartX = keyFrame.startX - lastKeyFrame.startX;
+                    var spanStartY = keyFrame.startY - lastKeyFrame.startY;
+                    var spanEndX = keyFrame.endX - lastKeyFrame.endX ;
+                    var spanEndY = keyFrame.endY - lastKeyFrame.endY;
+
+
+                    var incStartX = spanStartX/30;
+                    var incStartY = spanStartY/30;
+                    var incEndX = spanEndX/30;
+                    var incEndY = spanEndY/30;
+
+
+                    for (var j = 1; j <= 30; j++) {
+                        interpolatedStates.push({
+                            'startX': lastKeyFrame.startX + incStartX * j,
+                            'endX': lastKeyFrame.endX + incEndX * j,
+                            'startY': lastKeyFrame.startY + incStartY * j,
+                            'endY': lastKeyFrame.endY + incEndY * j
+                        });
+                    }
+                }
+
+                lastKeyFrame = keyFrame;
+            }
+
+            // pull current frame back off stack
+            keyFrames.pop();
+
+
+            playingBack = true;
+
+             for (var h = 0; h < interpolatedStates.length; h++){
+                var k = interpolatedStates[h];
+
+                updateState(k);
+             }
+
+             playingBack = false;
+
             return false;
         });
 
@@ -222,7 +289,8 @@
 
             if (currentCoordinate && downCoordinate) {
                 // draw the rectangle
-                ctx.strokeStyle = 'rgb(255,255,255)';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = 'rgb(255,0,0)';
 
                 // draw rectangle that maintains the original ratio based current x coordinate
                 ctx.strokeRect(
@@ -231,14 +299,6 @@
                     selectionRect.x2 - selectionRect.x1,
                     selectionRect.y2 - selectionRect.y1
                 );
-
-                ctx.beginPath();
-                ctx.arc(selectionRect.x2, selectionRect.y2, 5, 0 , 2 * Math.PI, false);
-                ctx.fillStyle = 'green';
-                ctx.fill();
-                ctx.lineWidth = 5;
-                ctx.strokeStyle = '#003300';
-                ctx.stroke();
 
             }
         }
@@ -267,13 +327,15 @@
     }
 
     function updateState(new_values, omitHistory /* Optional bool */) {
-        if (!omitHistory) {
+        if (!omitHistory && !playingBack) {
             // commit current state to history
             stateHistory.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY });
         }
 
-        // Store the path taken by the user for generation of zoom video
-        keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY });
+        if (!playingBack) {
+            // Store the path taken by the user for generation of zoom video
+            keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY });
+        }
 
         // Update the current state
         startX = new_values.startX;
