@@ -155,6 +155,19 @@
             return false;
         });
 
+        /* ---- Wire button to export a set of key frames / path through the fractal ---- */
+        $('#btnExportPath').click(function(event){
+            var fileContent = $.toJSON(keyFrames);
+            uriContent = "data:application/octet-stream,text/plain," + encodeURIComponent(fileContent);
+            //http://stackoverflow.com/questions/2897619/using-html5-javascript-to-generate-and-save-a-file
+            //var bb = new BlobBuilder();
+            //bb.append("Lorem ipsum");
+            //writer.onwrite = done;
+            //writer.onerror = error;
+
+            window.location.href = uriContent;
+        });
+
         // ---- Wire up keep proportions check box ----
         chkMandelbrotColorMaintainRatio.change(function(event){
             keepProportions = $(this).is(':checked');
