@@ -42,12 +42,14 @@
     var startX = defaultStartX, endX = defaultEndX, startY = defaultStartY, endY = defaultEndY;
     var canvasWidth = 500, canvasHeight = 400;
     // Cached controls
-    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false;
+    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false, mandelbrotColorVideoProgress = false;
     // UI state information
     var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false, keepProportions = true, playingBack = false;
     var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
     // Rendering Elements
     var canvas = false, ctx = false, imgGradient = false, imgData = false, gradient = false;
+    // Cache rendered frames for replay
+    var renderedFrames = [];
     // Worker threads
     var workerFractal = false;
 
@@ -57,6 +59,7 @@
         txtX2 = $('#inputX2');
         txtY1 = $('#inputY1');
         txtY2 = $('#inputY2');
+        mandelbrotColorVideoProgress = $('#mandelbrot-color-video-progress');
         lblStatus = $('#lblStatus');
         chkMandelbrotColorMaintainRatio = $('#chkMandelbrotColorMaintainRatio');
         lblMouseStatus = $('#lblMouseStatus');
@@ -77,7 +80,7 @@
 
         // Create the worker thread and wire a function to handel the rendering completion
         workerFractal = new Worker('gradient-colored-mandelbrot-gen-thread.js');
-        workerFractal.onmessage = renderComplete;
+        workerFractal.onmessage = renderThreadMessage;
 
         // render the fractal
         renderApplication(startX, endX, startY, endY, ctx, gradient);
@@ -88,10 +91,18 @@
             return false;
         });
 
+        // ---- Wire up playback button ----
+        $('#play-long-video').click(function(event){
+            animation_loop();
+        });
+
         // ---- Wire playback button click ----
         $('#btnMandelbrotColorPlay').click(function(event){
             // Simple Playback
-            /*playingBack = true;
+            playingBack = true;
+
+            // temporarily push current key frame to stack
+            keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY});
 
             for (var i = 0; i < keyFrames.length; i++){
                 var keyFrame = keyFrames[i];
@@ -99,8 +110,14 @@
                 updateState(keyFrame);
             }
 
-            playingBack = false;*/
+            playingBack = false;
 
+
+            // pull current frame back off stack
+            keyFrames.pop();
+        });
+
+        $('#btnMandelbrotColorGenerateVideo').click(function(event){
             // temporarily push current key frame to stack
             keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY});
 
@@ -140,32 +157,28 @@
 
             // pull current frame back off stack
             keyFrames.pop();
+            workerFractal.postMessage({
+                'generateVideo': true,
+                'frameStates': interpolatedStates,
+                'imageData': imgData,
+                'gradient': gradient,
+                'canvasWidth': canvasWidth,
+                'canvasHeight': canvasHeight
+            });
 
+            $('.long-load-display').css({'display': 'block' });
 
-            playingBack = true;
-
-             for (var h = 0; h < interpolatedStates.length; h++){
-                var k = interpolatedStates[h];
-
-                updateState(k);
-             }
-
-             playingBack = false;
-
-            return false;
         });
 
         /* ---- Wire button to export a set of key frames / path through the fractal ---- */
         $('#btnExportPath').click(function(event){
             var fileContent = $.toJSON(keyFrames);
-            uriContent = "data:application/octet-stream,text/plain," + encodeURIComponent(fileContent);
-            //http://stackoverflow.com/questions/2897619/using-html5-javascript-to-generate-and-save-a-file
-            //var bb = new BlobBuilder();
-            //bb.append("Lorem ipsum");
-            //writer.onwrite = done;
-            //writer.onerror = error;
 
-            window.location.href = uriContent;
+            var blob = new Blob([fileContent], {type: "text/plain;charset=utf-8"});
+            saveAs(blob, "MandelBrotPath.txt");
+
+            //uriContent = "data:application/octet-stream,text/plain," + encodeURIComponent(fileContent);
+            //window.location.href = uriContent;
         });
 
         // ---- Wire up keep proportions check box ----
@@ -385,6 +398,7 @@
             imgData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
         }
         workerFractal.postMessage({
+            'generateFrame': true,
             'startX': startX,
             'endX': endX,
             'startY': startY,
@@ -396,15 +410,53 @@
         });
     }
 
-    function renderComplete(event) {
-        // Paint the image
-        imgData = event.data.imageData; // cache image for repainting the screen
-        ctx.putImageData(event.data.imageData,0,0); // paint the image
+    function renderThreadMessage(event) {
 
+        switch (event.data.message) {
+            case 'videoGenerationComplete':
+                $('.long-load-playback').css({'display': 'block'});
+                $('.long-load-display').css({'display': 'none' });
 
-        // Update the UI, indicating that processing is complete
-        lblStatus.text('Done');
-        $('#lblSetInfo').text('Showing [' + startX + ' to ' + endX + '] x [' + startY + ' to ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
+                // save for future replace
+                renderedFrames = event.data.renderedFrames;
+
+                var i = 0, frame_pause = 50;
+                var animation_loop = function() {
+                    if (i < renderedFrames.length) {
+                        imgData.data.set(renderedFrames[i]);
+                        ctx.putImageData(imgData,0,0);
+                        setTimeout(animation_loop, frame_pause);
+                    }
+
+                    i++;
+                };
+
+                setTimeout(animation_loop, frame_pause);
+
+                break;
+            case 'frameGenerationComplete':
+                // Paint the image
+                imgData = event.data.imageData; // cache image for repainting the screen
+                ctx.putImageData(event.data.imageData,0,0); // paint the image
+
+                // Update the UI, indicating that processing is complete
+                lblStatus.text('Done');
+                $('#lblSetInfo').text('Showing [' + startX + ' to ' + endX + '] x [' + startY + ' to ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
+
+                break;
+            case 'progressUpdate':
+                var percent = Math.round((event.data.frameCount/event.data.frameTotal)*100);
+                mandelbrotColorVideoProgress.attr('value', percent);
+                break;
+        }
+    }
+
+    function sleep(millis)
+    {
+        var date = new Date();
+        var curDate = null;
+        do { curDate = new Date(); }
+        while(curDate-date < millis);
     }
 
     function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {
@@ -427,6 +479,19 @@
         ctx.putImageData(imageData,0,0);
 
         return imageData;
+    }
+
+    var i_frame = 0, frame_pause = 50;
+    function animation_loop () {
+        if (i_frame < renderedFrames.length) {
+            imgData.data.set(renderedFrames[i_frame]);
+            ctx.putImageData(imgData,0,0);
+            setTimeout(animation_loop, frame_pause);
+        } else {
+            i_frame = 0; // reset for next loop
+        }
+
+        i_frame++;
     }
 
     /**

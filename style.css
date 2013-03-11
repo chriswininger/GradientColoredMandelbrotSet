@@ -50,3 +50,19 @@
     vertical-align: top;
     margin: .5em;
 }
+
+.long-load-display
+{
+    display: none;
+    margin-top: 5em;
+    margin-bottom: 5em;
+}
+
+.long-load-playback
+{
+    margin-top: 5em;
+    margin-bottom: 5em;
+    color: red;
+    display: none;
+
+}
