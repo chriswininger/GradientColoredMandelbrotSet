@@ -58,33 +58,46 @@
 self.onmessage = function(event) {
     var args = event.data;
 
-    if (args.generateFrame === true) {
-        var startTime = new Date().getTime();
-        // generate the figure
-        drawMandelbrotSet(args.startX, args.endX, args.startY, args.endY, args.imageData, args.gradient, args.canvasWidth, args.canvasHeight);
-        // Calculate time taken
-        var endTime = new Date().getTime();
-        var timeTaken = endTime - startTime;
+    switch(args.message) {
+        case 'generateFrame':
+            var startTime = new Date().getTime();
+            // generate the figure
+            drawMandelbrotSet(args.startX, args.endX, args.startY, args.endY, args.imageData, args.gradient, args.canvasWidth, args.canvasHeight);
+            // Calculate time taken
+            var endTime = new Date().getTime();
+            var timeTaken = endTime - startTime;
 
-        // post back figure to main thread
-        self.postMessage({'message': 'frameGenerationComplete', 'imageData': args.imageData, 'timeTaken': timeTaken, 'generateFrame': true });
-    } else if (args.generateVideo === true) {
-        var renderedFrames = [];
+            // post back figure to main thread
+            self.postMessage({'message': 'frameGenerationComplete', 'imageData': args.imageData, 'timeTaken': timeTaken, 'generateFrame': true });
 
-        var length =  args.frameStates.length;
-        var state = false, frame = false;
-        for (var i = 0; i < length; i++) {
-            state = args.frameStates[i];
-            drawMandelbrotSet(state.startX, state.endX, state.startY, state.endY, args.imageData, args.gradient, args.canvasWidth, args.canvasHeight);
+            break;
+        case 'generateVideo':
+            var renderedFrames = [];
 
-            frame = new Uint8ClampedArray(args.imageData.data);
-            renderedFrames.push(frame);
+            var length =  args.frameStates.length;
+            var state = false, frame = false;
+            for (var i = 0; i < length; i++) {
+                state = args.frameStates[i];
+                drawMandelbrotSet(state.startX, state.endX, state.startY, state.endY, args.imageData, args.gradient, args.canvasWidth, args.canvasHeight);
 
-            // progress update
-            self.postMessage({'message': 'progressUpdate', 'frameTotal': length, 'frameCount': i })
-        }
+                frame = new Uint8ClampedArray(args.imageData.data);
+                renderedFrames.push(frame);
 
-        self.postMessage({'message': 'videoGenerationComplete', 'renderedFrames': renderedFrames, 'generateVideo': true });
+                // progress update
+                self.postMessage({'message': 'progressUpdate', 'frameTotal': length, 'frameCount': i })
+            }
+
+            self.postMessage({'message': 'videoGenerationComplete', 'renderedFrames': renderedFrames, 'generateVideo': true });
+
+            break;
+        case 'generateZip':
+            debugger;
+            if (typeof args.zip !== 'undefined'){
+                var content = args.zip.generate();
+                self.postMessage({'message': 'generateZipComplete', 'content': content});
+            }
+
+
     }
 };
 

@@ -8,22 +8,27 @@
     <script src= "lib/FileSaver.min.js" type="text/javascript"></script>
     <script src = "lib/jszip.js" type = "text/javascript"></script>
 
+   <!-- <script type="text/javascript" src="https://raw.github.com/eligrey/Blob.js/master/Blob.js"></script> -->
+    <!--  <script type="text/javascript" src="https://raw.github.com/eligrey/Blob.js/master/BlobBuilder.min.js"></script> -->
+     <!-- <script type="text/javascript" src="https://raw.github.com/eligrey/canvas-toBlob.js/master/canvas-toBlob.js"></script> -->
+
+    <script src = "https://raw.github.com/danguer/blog-examples/master/js/base64-binary.js" type="text/javascript"></script>
     <script src = "gradient-colored-mandelbrot.js" type = "text/javascript"></script>
 
-    <link href = "style.css" type = "text/css" rel = "stylesheet">
+     <link href = "style.css" type = "text/css" rel = "stylesheet">
 
-</head>
-<body>
-    <div id="divTopLabels">
-        <span id= "lblStatus">Loading...</span>
-        <span id = "lblMouseStatus"></span>
-    </div>
+ </head>
+ <body>
+     <div id="divTopLabels">
+         <span id= "lblStatus">Loading...</span>
+         <span id = "lblMouseStatus"></span>
+     </div>
 
-    <div class = "mandelbrot-colored-table">
-        <div class="mandelbrot-colored-table-row">
+     <div class = "mandelbrot-colored-table">
+         <div class="mandelbrot-colored-table-row">
 
-            <div class="mandelbrot-colored-table-cell">
-                <!-- Display Column -->
+             <div class="mandelbrot-colored-table-cell">
+                 <!-- Display Column -->
                 <div id = "mandelbrot-display-wrapper">
                     <div>
                         <canvas width = "500px" height="400px" id= "cvsMandelbrot">
@@ -109,7 +114,22 @@
                         <div class = "long-load-playback">
                             <hr />
                             <h3>Video Playback</h3>
-                            <a href="#" id="play-long-video">play video</a>
+
+                            <span>
+                                <a href="#" id="play-long-video">play video</a>
+                            </span>
+
+                            <span>
+                                <a href="#" id="mandelbrot-color-download-zip">download video frames</a>
+                            </span>
+
+                            <span>
+                                <a href="#" id="mandelbrot-color-download-test">test</a>
+                            </span>
+
+                            <span>
+                                <a href="#" id="mandelbrot-color-download-test2">test 2</a>
+                            </span>
                         </div>
 
                     </div>

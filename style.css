@@ -66,3 +66,8 @@
     display: none;
 
 }
+
+.long-load-playback span
+{
+    margin: .5pt;
+}

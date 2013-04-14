@@ -32,6 +32,26 @@
             return [data[r], data[r + 1], data[r + 2], data[r + 3]];
         };
     }
+
+
+    String.prototype.padRight = function(c, padWidth) {
+        var len = padWidth - this.length, padding = '';
+        for (var i = 0; i < len; i++) {
+            padding += c;
+        }
+
+        return this + padding;
+    };
+
+    String.prototype.padLeft = function(c, padWidth) {
+        var len = padWidth - this.length, padding = '';
+        for (var i = 0; i < len; i++) {
+            padding += c;
+        }
+
+        return padding + this;
+    };
+
 })();
 
 // Mandelbrot Set Code
@@ -117,6 +137,151 @@
             keyFrames.pop();
         });
 
+        /* ---- Wire up frame download button ----- */
+        $('#mandelbrot-color-download-zip').click(function(event){
+            downloadZip();
+
+            return false;
+        });
+
+
+        $('#mandelbrot-color-download-test2').click(function(event){
+            var testArray = renderedFrames[0];
+
+            var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
+            var ctxBuffer = canvBuffer[0].getContext('2d');
+
+            imgData.data.set(renderedFrames[0]);
+            ctxBuffer.putImageData(imgData,0,0);
+
+            var strContent = canvBuffer[0].toDataURL();
+
+            window.location.href =  strContent;
+        });
+
+
+            $('#mandelbrot-color-download-test').click(function(event){
+            var testArray = renderedFrames[0];
+
+            var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
+            var ctxBuffer = canvBuffer[0].getContext('2d');
+
+            imgData.data.set(renderedFrames[0]);
+            ctxBuffer.putImageData(imgData,0,0);
+
+            var strURI = canvBuffer[0].toDataURL("image/png");
+
+            var mime = strURI.split(',')[0];
+            var byteString = atob(strURI.substring(strURI.indexOf(',')+1)); // strContent.split(',')[1]);
+            var byteString2 = atob(decodeURIComponent(strURI.substring(strURI.indexOf(',')+1))); // strContent.split(',')[1]);
+            var byteArray = Base64Binary.decode(strURI.substring(strURI.indexOf(',')+1));
+
+
+                debugger;
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", strURI, false);
+            xhr.overrideMimeType("image/png;base64");
+            xhr.send(null);
+            var byteString3 = xhr.responseText;
+
+debugger;
+            /*var b;
+            canvBuffer[0].toBlob(function(blob) {
+                b = blob;
+                alert('done');
+                debugger;
+            }, "image/png");*/
+
+            //var ab = new ArrayBuffer(byteString.length);
+
+            var ia = new Uint8Array(byteString.length);
+
+            for (var i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i)  & 0xff;
+            }
+
+
+            //debugger;
+
+            toTar([byteString]);
+        });
+
+
+        function toTar(files /* array of blobs to convert */){
+            var tar = '';
+
+            for (var i = 0, f = false, chkSumString, totalChkSum, out; i < files.length; i++) {
+
+                f = files[i];
+                chkSumString = '';
+
+                //var content = '';
+                var content  = f;
+                /*for (var j = 0, c; j < f.length; j++) {
+                    content +=  String.fromCharCode(f[j]);
+
+                }*/
+
+                /*var j = 0, c,c2,c3;
+                while (j < f.length) {
+                    c = f[j];
+
+                    if (c < 128) {
+                        content += String.fromCharCode(c);
+                        j++;
+                    }
+                    else if((c > 191) && (c < 224)) {
+                        c2 = f[j+1];
+                        content += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                        j += 2;
+                    }
+                    else {
+                        c2 = f[i+1];
+                        c3 = f[i+2];
+                        content += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                        j += 3;
+                    }
+                }*/
+
+                var name = 'p1.png'.padRight('\0', 100);
+                var mode = '0000664'.padRight('\0', 8);
+                var uid = (1000).toString(8).padLeft('0', 7).padRight('\0',8);
+                var gid = (1000).toString(8).padLeft('0', 7).padRight('\0',8);
+                var size = (f.length).toString(8).padLeft('0', 11).padRight('\0',12);
+                //alert((new Date()/1000)  + '');
+                var mtime = '12123623701'.padRight('\0', 12); // modification time
+                var chksum = '        '; // enter all spaces to calculate chksum
+                var typeflag = '0';
+                var linkname = ''.padRight('\0',100);
+                var ustar = 'ustar  \0';
+                var uname = 'chris'.padRight('\0', 32);
+                var gname = 'chris'.padRight('\0', 32);
+
+                // Construct header with spaces filling in for chksum value
+                chkSumString = (name + mode + uid + gid + size + mtime + chksum + typeflag + linkname + ustar + uname + gname).padRight('\0', 512);
+
+
+                // Calculate chksum for header
+                totalChkSum = 0;
+                for (var i = 0, ch; i < chkSumString.length; i++){
+                    ch =  chkSumString.charCodeAt(i);
+                    totalChkSum += ch;
+                }
+
+                // reconstruct header plus content with chksum inserted
+                chksum = (totalChkSum).toString(8).padLeft('0', 6) + '\0 ';
+                out = (name + mode + uid + gid + size + mtime + chksum + typeflag + linkname + ustar + uname + gname).padRight('\0', 512);
+                out += content.padRight('\0', (512 + Math.floor(content.length/512) * 512)); // pad out to a multiple of 512
+                out += ''.padRight('\0', 1024); // two 512 blocks to terminate the file
+                tar += out;
+            }
+
+            var b = new Blob([tar], {'type': 'application/tar'});
+            window.location.href =  window.URL.createObjectURL(b);
+
+        }
+
+        /* ---- Wire Up Video Generation Button ---- */
         $('#btnMandelbrotColorGenerateVideo').click(function(event){
             // temporarily push current key frame to stack
             keyFrames.push({'startX': startX, 'endX': endX, 'startY': startY, 'endY': endY});
@@ -158,6 +323,7 @@
             // pull current frame back off stack
             keyFrames.pop();
             workerFractal.postMessage({
+                'message': 'generateVideo',
                 'generateVideo': true,
                 'frameStates': interpolatedStates,
                 'imageData': imgData,
@@ -398,6 +564,7 @@
             imgData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
         }
         workerFractal.postMessage({
+            'message': 'generateFrame',
             'generateFrame': true,
             'startX': startX,
             'endX': endX,
@@ -444,6 +611,10 @@
                 $('#lblSetInfo').text('Showing [' + startX + ' to ' + endX + '] x [' + startY + ' to ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
 
                 break;
+            case 'generateZipComplete':
+                // var content = zip.generate();
+                location.href = "data:application/zip;base64," + event.data.content;
+                break;
             case 'progressUpdate':
                 var percent = Math.round((event.data.frameCount/event.data.frameTotal)*100);
                 mandelbrotColorVideoProgress.attr('value', percent);
@@ -457,6 +628,67 @@
         var curDate = null;
         do { curDate = new Date(); }
         while(curDate-date < millis);
+    }
+
+    function downloadZip() {
+        // Generate down link
+        var zip = new JSZip();
+        var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
+        var ctxBuffer = canvBuffer[0].getContext('2d');
+
+        var strContent = '';
+        var i = 0;
+
+        var complete_loop = function() {
+           //workerFractal.postMessage({'message': 'generateZip', 'zip': zip});
+           var content = zip.generate();
+           location.href = "data:application/zip;base64," + content;
+        };
+
+        var build_loop = function() {
+            if (i < renderedFrames.length) {
+                imgData.data.set(renderedFrames[i]);
+                ctxBuffer.putImageData(imgData,0,0);
+
+                strContent = canvBuffer[0].toDataURL();
+                strContent = strContent.substr(strContent.indexOf(',') + 1, strContent.length);
+                zip.file('f' + i + '.png', strContent, {base64: true });
+
+                setTimeout(build_loop);
+
+                i++;
+            } else {
+                complete_loop();
+            }
+
+        };
+
+        setTimeout(build_loop);
+
+
+
+
+        //for (var i = 0; i < renderedFrames.length; i++) {
+            //imgData.data.set(renderedFrames[i]);
+            //ctxBuffer.putImageData(imgData,0,0);
+
+            //strContent = canvBuffer[0].toDataURL();
+            //strContent = strContent.substr(strContent.indexOf(',') + 1, strContent.length);
+          //  zip.file('f' + i + '.png', strContent, {base64: true });
+        //}
+
+        //if (typeof window.URL === 'undefined' || typeof window.URL.createObjectURL === 'undefined'){
+        //var content = zip.generate();
+        //location.href = "data:application/zip;base64," + content;
+        //} else {
+        //    var content = zip.generate({type:"blob"});
+
+
+        //    var myLink = $('#mandelbrot-color-download-test')[0];
+;       //    myLink.href = 'data:application/zip;base64,' + window.URL.createObjectURL(content);
+        //    myLink.download = 'myFile.zip';
+        //}
+
     }
 
     function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {
