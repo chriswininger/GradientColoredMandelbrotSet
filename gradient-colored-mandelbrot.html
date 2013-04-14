@@ -17,6 +17,44 @@
 
      <link href = "style.css" type = "text/css" rel = "stylesheet">
 
+    <script type="text/javascript">
+        var globalTest;
+        $(function() {
+            $('#testFile').change(imgUploadSelectorChange);
+
+        });
+
+        function imgUploadSelectorChange(e){
+            var filename = $(this).val().replace(/^.*(\\|\/|\:)/, '');
+
+            var files = e.target.files; // FileList object
+            // files is a FileList of File objects. List some properties.
+            //var output = [];
+            for (var i = 0, f; f = files[i]; i++) {
+                // Only process image files.
+                if (!f.type.match('image.*')) {
+                    continue;
+                }
+                    var reader = new FileReader();
+                    // Closure to capture the file information.
+                    reader.onload = (function(theFile) {
+                    return function(e) {
+                        debugger;
+                        globalTest = e.target.result;
+                        // Load into temporary storage to resize for thumbnail (Perform resize in the tempImage onload event to insure it is fully loaded first
+
+
+                        // Load image into temporary storage
+                        //tempImage.src = e.target.result;
+                        // Show dialog for thumbnail selection
+                        //$(dlgThumb).dialog('open');
+                    };
+                })(f);
+                // Read in the image file as a data URL.
+                reader.readAsBinaryString(f);
+            }
+        }
+    </script>
  </head>
  <body>
      <div id="divTopLabels">
@@ -96,6 +134,8 @@
 
 
                             <button id="btnExportPath">Export Path</button>
+
+                           <input type="file" id="testFile">
                         </div>
 
                         <div class = "long-load-display">

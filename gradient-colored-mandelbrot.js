@@ -176,7 +176,7 @@
             var byteString2 = atob(decodeURIComponent(strURI.substring(strURI.indexOf(',')+1))); // strContent.split(',')[1]);
             var byteArray = Base64Binary.decode(strURI.substring(strURI.indexOf(',')+1));
 
-
+            var byteString4 = base64_decode(strURI.substring(strURI.indexOf(',')+1));
                 debugger;
             var xhr = new XMLHttpRequest();
             xhr.open("GET", strURI, false);
@@ -210,13 +210,13 @@ debugger;
         function toTar(files /* array of blobs to convert */){
             var tar = '';
 
-            for (var i = 0, f = false, chkSumString, totalChkSum, out; i < files.length; i++) {
+            for (var file_count = 0, f = false, chkSumString, totalChkSum, out; file_count < files.length; file_count++) {
 
-                f = files[i];
+                f = files[file_count];
                 chkSumString = '';
 
-                //var content = '';
-                var content  = f;
+                var content = f;
+
                 /*for (var j = 0, c; j < f.length; j++) {
                     content +=  String.fromCharCode(f[j]);
 
@@ -276,7 +276,12 @@ debugger;
                 tar += out;
             }
 
-            var b = new Blob([tar], {'type': 'application/tar'});
+            var byteArray = new Uint8Array(tar.length);
+            for (var b = 0; b < tar.length; b++) {
+                byteArray[b] = tar.charCodeAt(b);
+            }
+
+            var b = new Blob([byteArray.buffer], {'type': 'application/tar'});
             window.location.href =  window.URL.createObjectURL(b);
 
         }
@@ -764,4 +769,61 @@ debugger;
 
         return Math.floor(Math.map(i, 0, maxCount, 0, 254));
     }
+
+    function base64_decode (data) {
+        // http://kevin.vanzonneveld.net
+        // +   original by: Tyler Akins (http://rumkin.com)
+        // +   improved by: Thunder.m
+        // +      input by: Aman Gupta
+        // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+        // +   bugfixed by: Onno Marsman
+        // +   bugfixed by: Pellentesque Malesuada
+        // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+        // +      input by: Brett Zamir (http://brett-zamir.me)
+        // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+        // *     example 1: base64_decode('S2V2aW4gdmFuIFpvbm5ldmVsZA==');
+        // *     returns 1: 'Kevin van Zonneveld'
+        // mozilla has this native
+        // - but breaks in 2.0.0.12!
+        //if (typeof this.window['atob'] == 'function') {
+        //    return atob(data);
+        //}
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+            ac = 0,
+            dec = "",
+            tmp_arr = [];
+
+        if (!data) {
+            return data;
+        }
+
+        data += '';
+
+        do { // unpack four hexets into three octets using index points in b64
+            h1 = b64.indexOf(data.charAt(i++));
+            h2 = b64.indexOf(data.charAt(i++));
+            h3 = b64.indexOf(data.charAt(i++));
+            h4 = b64.indexOf(data.charAt(i++));
+
+            bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+
+            o1 = bits >> 16 & 0xff;
+            o2 = bits >> 8 & 0xff;
+            o3 = bits & 0xff;
+
+            if (h3 == 64) {
+                tmp_arr[ac++] = String.fromCharCode(o1);
+            } else if (h4 == 64) {
+                tmp_arr[ac++] = String.fromCharCode(o1, o2);
+            } else {
+                tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
+            }
+        } while (i < data.length);
+
+        dec = tmp_arr.join('');
+
+        return dec;
+    }
+
 })();
