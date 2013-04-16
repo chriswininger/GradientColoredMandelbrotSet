@@ -146,7 +146,7 @@
 
 
         $('#mandelbrot-color-download-test2').click(function(event){
-            var testArray = renderedFrames[0];
+            var testArray = renderedFrames[1];
 
             var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
             var ctxBuffer = canvBuffer[0].getContext('2d');
@@ -160,52 +160,24 @@
         });
 
 
-            $('#mandelbrot-color-download-test').click(function(event){
-            var testArray = renderedFrames[0];
+        $('#mandelbrot-color-download-test').click(function(event){
 
-            var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
-            var ctxBuffer = canvBuffer[0].getContext('2d');
+            var arrFiles = new Array();
+            for (var frameCount = 0; frameCount < renderedFrames.length; frameCount++) {
+                var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
+                var ctxBuffer = canvBuffer[0].getContext('2d');
 
-            imgData.data.set(renderedFrames[0]);
-            ctxBuffer.putImageData(imgData,0,0);
+                imgData.data.set(renderedFrames[frameCount]);
+                ctxBuffer.putImageData(imgData,0,0);
 
-            var strURI = canvBuffer[0].toDataURL("image/png");
+                var strURI = canvBuffer[0].toDataURL("image/png");
+                var byteString = atob(strURI.substring(strURI.indexOf(',')+1));
 
-            var mime = strURI.split(',')[0];
-            var byteString = atob(strURI.substring(strURI.indexOf(',')+1)); // strContent.split(',')[1]);
-            var byteString2 = atob(decodeURIComponent(strURI.substring(strURI.indexOf(',')+1))); // strContent.split(',')[1]);
-            var byteArray = Base64Binary.decode(strURI.substring(strURI.indexOf(',')+1));
-
-            var byteString4 = base64_decode(strURI.substring(strURI.indexOf(',')+1));
-                debugger;
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", strURI, false);
-            xhr.overrideMimeType("image/png;base64");
-            xhr.send(null);
-            var byteString3 = xhr.responseText;
-
-debugger;
-            /*var b;
-            canvBuffer[0].toBlob(function(blob) {
-                b = blob;
-                alert('done');
-                debugger;
-            }, "image/png");*/
-
-            //var ab = new ArrayBuffer(byteString.length);
-
-            var ia = new Uint8Array(byteString.length);
-
-            for (var i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i)  & 0xff;
+                arrFiles.push(byteString);
             }
 
-
-            //debugger;
-
-            toTar([byteString]);
+            toTar(arrFiles);
         });
-
 
         function toTar(files /* array of blobs to convert */){
             var tar = '';
@@ -217,33 +189,7 @@ debugger;
 
                 var content = f;
 
-                /*for (var j = 0, c; j < f.length; j++) {
-                    content +=  String.fromCharCode(f[j]);
-
-                }*/
-
-                /*var j = 0, c,c2,c3;
-                while (j < f.length) {
-                    c = f[j];
-
-                    if (c < 128) {
-                        content += String.fromCharCode(c);
-                        j++;
-                    }
-                    else if((c > 191) && (c < 224)) {
-                        c2 = f[j+1];
-                        content += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
-                        j += 2;
-                    }
-                    else {
-                        c2 = f[i+1];
-                        c3 = f[i+2];
-                        content += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
-                        j += 3;
-                    }
-                }*/
-
-                var name = 'p1.png'.padRight('\0', 100);
+                var name = ('p' + (file_count.toString()).padLeft('0', 10) + '.png').padRight('\0', 100);
                 var mode = '0000664'.padRight('\0', 8);
                 var uid = (1000).toString(8).padLeft('0', 7).padRight('\0',8);
                 var gid = (1000).toString(8).padLeft('0', 7).padRight('\0',8);
@@ -272,13 +218,15 @@ debugger;
                 chksum = (totalChkSum).toString(8).padLeft('0', 6) + '\0 ';
                 out = (name + mode + uid + gid + size + mtime + chksum + typeflag + linkname + ustar + uname + gname).padRight('\0', 512);
                 out += content.padRight('\0', (512 + Math.floor(content.length/512) * 512)); // pad out to a multiple of 512
-                out += ''.padRight('\0', 1024); // two 512 blocks to terminate the file
+
                 tar += out;
             }
 
+            tar += ''.padRight('\0', 1024); // two 512 blocks to terminate the file
+
             var byteArray = new Uint8Array(tar.length);
-            for (var b = 0; b < tar.length; b++) {
-                byteArray[b] = tar.charCodeAt(b);
+            for (var byte_count = 0; byte_count < tar.length; byte_count++) {
+                byteArray[byte_count] = tar.charCodeAt(byte_count);
             }
 
             var b = new Blob([byteArray.buffer], {'type': 'application/tar'});
