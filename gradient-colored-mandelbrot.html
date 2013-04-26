@@ -7,6 +7,7 @@
     <script src= "lib/jquery.json-2.4.min.js" type="text/javascript"></script>
     <script src= "lib/FileSaver.min.js" type="text/javascript"></script>
     <script src = "lib/jszip.js" type = "text/javascript"></script>
+    <script src = "lib/jstar.js" type = "text/javascript"></script>
 
    <!-- <script type="text/javascript" src="https://raw.github.com/eligrey/Blob.js/master/Blob.js"></script> -->
     <!--  <script type="text/javascript" src="https://raw.github.com/eligrey/Blob.js/master/BlobBuilder.min.js"></script> -->
@@ -138,7 +139,7 @@
                            <input type="file" id="testFile">
                         </div>
 
-                        <div class = "long-load-display">
+                        <div id="long-load-display" class="long-load-display">
                             <div>
                                 <img src = "images/ajax-loader.gif" id= "img-ajax-loading" />
                                 <progress id="mandelbrot-color-video-progress" max="100" value="0">
@@ -147,7 +148,7 @@
                             </div>
 
                             <div>
-                                <span>The video is being generated. This may take a while.</span>
+                                <span id="long-load-message">The video is being generated. This may take a while.</span>
                             </div>
                         </div>
 

@@ -62,7 +62,7 @@
     var startX = defaultStartX, endX = defaultEndX, startY = defaultStartY, endY = defaultEndY;
     var canvasWidth = 500, canvasHeight = 400;
     // Cached controls
-    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false, mandelbrotColorVideoProgress = false;
+    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false, mandelbrotColorVideoProgress = false, divLongLoad, lblLongLoadMessage = false;
     // UI state information
     var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false, keepProportions = true, playingBack = false;
     var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
@@ -83,6 +83,8 @@
         lblStatus = $('#lblStatus');
         chkMandelbrotColorMaintainRatio = $('#chkMandelbrotColorMaintainRatio');
         lblMouseStatus = $('#lblMouseStatus');
+        divLongLoad = $('#long-load-display');
+        lblLongLoadMessage = $('#long-load-message');
 
         // update keep proportions
         keepProportions = chkMandelbrotColorMaintainRatio.is(':checked');
@@ -145,39 +147,73 @@
         });
 
 
-        $('#mandelbrot-color-download-test2').click(function(event){
-            var testArray = renderedFrames[1];
-
-            var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
-            var ctxBuffer = canvBuffer[0].getContext('2d');
-
-            imgData.data.set(renderedFrames[0]);
-            ctxBuffer.putImageData(imgData,0,0);
-
-            var strContent = canvBuffer[0].toDataURL();
-
-            window.location.href =  strContent;
-        });
-
-
         $('#mandelbrot-color-download-test').click(function(event){
 
+            // Show loading section with progress bar
+            divLongLoad.show();
+
+            // loop through each frame and create an image
             var arrFiles = new Array();
-            for (var frameCount = 0; frameCount < renderedFrames.length; frameCount++) {
-                var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
-                var ctxBuffer = canvBuffer[0].getContext('2d');
 
-                imgData.data.set(renderedFrames[frameCount]);
-                ctxBuffer.putImageData(imgData,0,0);
+            // convert each frame to an image file and store in array using batch processing to allow event queue to be handled
+            var frameCount = 0;
+            var batch = function()
+            {
+                if (frameCount < renderedFrames.length)  {
+                    lblLongLoadMessage.text('Processing Frames...');
 
-                var strURI = canvBuffer[0].toDataURL("image/png");
-                var byteString = atob(strURI.substring(strURI.indexOf(',')+1));
+                    var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
+                    var ctxBuffer = canvBuffer[0].getContext('2d');
 
-                arrFiles.push(byteString);
+                    imgData.data.set(renderedFrames[frameCount]);
+                    ctxBuffer.putImageData(imgData,0,0);
+
+                    var strURI = canvBuffer[0].toDataURL('image/jpeg', 1.0); //("image/png");
+                    var byteString = atob(strURI.substring(strURI.indexOf(',')+1));
+                    // add compressed image file to array
+                    arrFiles.push({'name': 'p' + (frameCount.toString()).padLeft('0', 10) + '.jpeg', 'data': byteString});
+
+                    // log progress
+                    mandelbrotColorVideoProgress.attr('value', Math.round((frameCount/renderedFrames.length) * 100));
+
+                    // process the next batch
+                    frameCount++;
+                    window.setTimeout(batch, 0);
+                } else {
+                    lblLongLoadMessage.text('Building Tar File...');
+
+                    // array complete, convert to tar
+                    jsTar.toTar(arrFiles, {
+                        'complete': tarComplete,
+                        'error': tarError,
+                        'progress': tarProgress
+                    });
+                }
             }
 
-            toTar(arrFiles);
+            window.setTimeout(batch, 0);
         });
+
+        function tarComplete(info) {
+            divLongLoad.hide();
+
+            if (info.status === 'success') {
+                // Save the blob to disk
+                window.location.href =  window.URL.createObjectURL(info.data);
+            } else {
+                alert(info.message);
+            }
+        }
+
+        function tarError (info) {
+            divLongLoad.hide();
+            alert(info.message);
+        }
+
+        function tarProgress(info) {
+            var progress = Math.round((info.count/info.total) * 100);
+            mandelbrotColorVideoProgress.attr('value', progress);
+        }
 
         function toTar(files /* array of blobs to convert */){
             var tar = '';
@@ -285,7 +321,7 @@
                 'canvasHeight': canvasHeight
             });
 
-            $('.long-load-display').css({'display': 'block' });
+            divLongLoad.show();
 
         });
 
@@ -535,7 +571,7 @@
         switch (event.data.message) {
             case 'videoGenerationComplete':
                 $('.long-load-playback').css({'display': 'block'});
-                $('.long-load-display').css({'display': 'none' });
+                divLongLoad.hide();
 
                 // save for future replace
                 renderedFrames = event.data.renderedFrames;
