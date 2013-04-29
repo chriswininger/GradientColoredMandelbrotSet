@@ -62,7 +62,8 @@
     var startX = defaultStartX, endX = defaultEndX, startY = defaultStartY, endY = defaultEndY;
     var canvasWidth = 500, canvasHeight = 400;
     // Cached controls
-    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false, mandelbrotColorVideoProgress = false, divLongLoad, lblLongLoadMessage = false;
+    var txtX1 = false, txtX2 = false, txtY1 = false, txtY2 = false, lblStatus = false, chkMandelbrotColorMaintainRatio = false,
+        mandelbrotColorVideoProgress = false, divLongLoad = false, lblLongLoadMessage = false, lblDisplayInfo = false, btnDownloadTar = false;
     // UI state information
     var lblMouseStatus = false, currentCoordinate = false, mouseDown = false, downCoordinate = false, keepProportions = true, playingBack = false;
     var stateHistory = [/* {startX, endX, startY, endY } */], keyFrames = [/* {startX, endX, startY, endY } */];
@@ -82,9 +83,11 @@
         mandelbrotColorVideoProgress = $('#mandelbrot-color-video-progress');
         lblStatus = $('#lblStatus');
         chkMandelbrotColorMaintainRatio = $('#chkMandelbrotColorMaintainRatio');
-        lblMouseStatus = $('#lblMouseStatus');
+        //lblMouseStatus = $('#lblMouseStatus');
         divLongLoad = $('#long-load-display');
         lblLongLoadMessage = $('#long-load-message');
+        lblDisplayInfo = $('#lblSetInfo');
+        btnDownloadTar = $('#mandelbrot-color-download-tar');
 
         // update keep proportions
         keepProportions = chkMandelbrotColorMaintainRatio.is(':checked');
@@ -147,7 +150,7 @@
         });
 
 
-        $('#mandelbrot-color-download-test').click(function(event){
+        btnDownloadTar.click(function(event){
 
             // Show loading section with progress bar
             divLongLoad.show();
@@ -206,7 +209,7 @@
         }
 
         function tarError (info) {
-            divLongLoad.hide();
+           divLongLoad.hide();
             alert(info.message);
         }
 
@@ -383,7 +386,7 @@
             }
 
             // Display the mouse coordinates as translated onto the complex number plane
-            lblMouseStatus.text(real + ' X ' + imaginary);
+            //lblMouseStatus.text(real + ' X ' + imaginary);
         }
 
         // ---- Mouse Down on Canvas ----
@@ -546,8 +549,8 @@
         // Display the current mandelbrot state on the form
         setRangeValuesOnForm();
 
-        lblStatus.html('Loading...');
-        lblMouseStatus.text('');
+        //lblStatus.html('Loading...');
+        //lblMouseStatus.text('');
 
         if (!imgData) {
             imgData = ctx.getImageData(0,0, canvasWidth, canvasHeight);
@@ -570,7 +573,7 @@
 
         switch (event.data.message) {
             case 'videoGenerationComplete':
-                $('.long-load-playback').css({'display': 'block'});
+                $('.long-load-playback').show();
                 divLongLoad.hide();
 
                 // save for future replace
@@ -596,8 +599,8 @@
                 ctx.putImageData(event.data.imageData,0,0); // paint the image
 
                 // Update the UI, indicating that processing is complete
-                lblStatus.text('Done');
-                $('#lblSetInfo').text('Showing [' + startX + ' to ' + endX + '] x [' + startY + ' to ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
+                //lblStatus.text('Done');
+                lblDisplayInfo.text('Showing [' + startX + ' to ' + endX + '] x [' + startY + ' to ' + endY + '] Completed in: ' + event.data.timeTaken + ' ms');
 
                 break;
             case 'generateZipComplete':

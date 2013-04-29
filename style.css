@@ -51,20 +51,17 @@
     margin: .5em;
 }
 
-.long-load-display
+#long-load-display
 {
     display: none;
-    margin-top: 5em;
-    margin-bottom: 5em;
+    /*margin-top: 5em;
+    margin-bottom: 5em;*/
 }
 
 .long-load-playback
 {
-    margin-top: 5em;
-    margin-bottom: 5em;
     color: red;
     display: none;
-
 }
 
 .long-load-playback span
