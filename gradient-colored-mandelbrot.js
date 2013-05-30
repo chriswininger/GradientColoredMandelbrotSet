@@ -143,13 +143,6 @@
         });
 
         /* ---- Wire up frame download button ----- */
-        $('#mandelbrot-color-download-zip').click(function(event){
-            downloadZip();
-
-            return false;
-        });
-
-
         btnDownloadTar.click(function(event){
 
             // Show loading section with progress bar
@@ -620,67 +613,6 @@
         var curDate = null;
         do { curDate = new Date(); }
         while(curDate-date < millis);
-    }
-
-    function downloadZip() {
-        // Generate down link
-        var zip = new JSZip();
-        var canvBuffer = $('<canvas>').attr('width', canvasWidth).attr('height', canvasHeight);
-        var ctxBuffer = canvBuffer[0].getContext('2d');
-
-        var strContent = '';
-        var i = 0;
-
-        var complete_loop = function() {
-           //workerFractal.postMessage({'message': 'generateZip', 'zip': zip});
-           var content = zip.generate();
-           location.href = "data:application/zip;base64," + content;
-        };
-
-        var build_loop = function() {
-            if (i < renderedFrames.length) {
-                imgData.data.set(renderedFrames[i]);
-                ctxBuffer.putImageData(imgData,0,0);
-
-                strContent = canvBuffer[0].toDataURL();
-                strContent = strContent.substr(strContent.indexOf(',') + 1, strContent.length);
-                zip.file('f' + i + '.png', strContent, {base64: true });
-
-                setTimeout(build_loop);
-
-                i++;
-            } else {
-                complete_loop();
-            }
-
-        };
-
-        setTimeout(build_loop);
-
-
-
-
-        //for (var i = 0; i < renderedFrames.length; i++) {
-            //imgData.data.set(renderedFrames[i]);
-            //ctxBuffer.putImageData(imgData,0,0);
-
-            //strContent = canvBuffer[0].toDataURL();
-            //strContent = strContent.substr(strContent.indexOf(',') + 1, strContent.length);
-          //  zip.file('f' + i + '.png', strContent, {base64: true });
-        //}
-
-        //if (typeof window.URL === 'undefined' || typeof window.URL.createObjectURL === 'undefined'){
-        //var content = zip.generate();
-        //location.href = "data:application/zip;base64," + content;
-        //} else {
-        //    var content = zip.generate({type:"blob"});
-
-
-        //    var myLink = $('#mandelbrot-color-download-test')[0];
-;       //    myLink.href = 'data:application/zip;base64,' + window.URL.createObjectURL(content);
-        //    myLink.download = 'myFile.zip';
-        //}
-
     }
 
     function drawMandelbrotSet(startX, endX, startY, endY, ctx, gradient) {
