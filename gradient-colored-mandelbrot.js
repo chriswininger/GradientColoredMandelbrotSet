@@ -104,7 +104,7 @@
         gradient = loadGradientLine(imgGradient[0]);
 
         // Create the worker thread and wire a function to handel the rendering completion
-        workerFractal = new Worker('gradient-colored-mandelbrot-gen-thread.js');
+        workerFractal = new Worker('gradient-colored-mandelbrot-gen-thread.min.js');
         workerFractal.onmessage = renderThreadMessage;
 
         // render the fractal

@@ -96,8 +96,6 @@ self.onmessage = function(event) {
                 var content = args.zip.generate();
                 self.postMessage({'message': 'generateZipComplete', 'content': content});
             }
-
-
     }
 };
 
