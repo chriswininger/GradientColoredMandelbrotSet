@@ -118,7 +118,7 @@ function drawMandelbrotSet(startX, endX, startY, endY, imageData, gradient, canv
             imageData.setPixel(gradient[escapeVal], x, y); // color the pixel based on how the rate of escape maps to the chosen color gradient
         }
     }
-
+//test
     //ctx.putImageData(imageData,0,0);
 
     //return imageData;
