@@ -1,0 +1,25 @@
+<component name="libraryTable">
+  <library name="Generated files" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/lib/jszip.min.js" />
+        <item url="file://$PROJECT_DIR$/lib/jquery.json-2.4.min.min.js" />
+        <item url="file://$PROJECT_DIR$/lib/FileSaver.min.min.js" />
+        <item url="file://$PROJECT_DIR$/lib/jquery-1.8.3.min.js" />
+        <item url="file://$PROJECT_DIR$/lib/jquery-1.9.1.min.js" />
+        <item url="file://$PROJECT_DIR$/gradient-colored-mandelbrot.min.js" />
+        <item url="file://$PROJECT_DIR$/gradient-colored-mandelbrot-gen-thread.min.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/lib/jszip.min.js" />
+      <root url="file://$PROJECT_DIR$/lib/jquery.json-2.4.min.min.js" />
+      <root url="file://$PROJECT_DIR$/lib/FileSaver.min.min.js" />
+      <root url="file://$PROJECT_DIR$/lib/jquery-1.8.3.min.js" />
+      <root url="file://$PROJECT_DIR$/gradient-colored-mandelbrot.min.js" />
+      <root url="file://$PROJECT_DIR$/lib/jquery-1.9.1.min.js" />
+      <root url="file://$PROJECT_DIR$/gradient-colored-mandelbrot-gen-thread.min.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>

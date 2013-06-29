@@ -13,48 +13,17 @@
     <!--  <script type="text/javascript" src="https://raw.github.com/eligrey/Blob.js/master/BlobBuilder.min.js"></script> -->
      <!-- <script type="text/javascript" src="https://raw.github.com/eligrey/canvas-toBlob.js/master/canvas-toBlob.js"></script> -->
 
-    <script src = "https://raw.github.com/danguer/blog-examples/master/js/base64-binary.js" type="text/javascript"></script>
+    <script src = "lib/base64-binary.js" type="text/javascript"></script>
     <script src = "gradient-colored-mandelbrot.js" type = "text/javascript"></script>
 
      <link href = "style.css" type = "text/css" rel = "stylesheet">
 
     <script type="text/javascript">
-        var globalTest;
-        $(function() {
-            $('#testFile').change(imgUploadSelectorChange);
-
-        });
-
-        function imgUploadSelectorChange(e){
-            var filename = $(this).val().replace(/^.*(\\|\/|\:)/, '');
-
-            var files = e.target.files; // FileList object
-            // files is a FileList of File objects. List some properties.
-            //var output = [];
-            for (var i = 0, f; f = files[i]; i++) {
-                // Only process image files.
-                if (!f.type.match('image.*')) {
-                    continue;
-                }
-                    var reader = new FileReader();
-                    // Closure to capture the file information.
-                    reader.onload = (function(theFile) {
-                    return function(e) {
-                        debugger;
-                        globalTest = e.target.result;
-                        // Load into temporary storage to resize for thumbnail (Perform resize in the tempImage onload event to insure it is fully loaded first
-
-
-                        // Load image into temporary storage
-                        //tempImage.src = e.target.result;
-                        // Show dialog for thumbnail selection
-                        //$(dlgThumb).dialog('open');
-                    };
-                })(f);
-                // Read in the image file as a data URL.
-                reader.readAsBinaryString(f);
-            }
-        }
+        (function(){
+            GradientColoredMandelbrot.load_mandelbrot({
+                'urlWorkerThread': 'gradient-colored-mandelbrot-gen-thread.min.js'
+            });
+        })();
     </script>
  </head>
  <body>
