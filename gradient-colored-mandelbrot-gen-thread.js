@@ -5,14 +5,13 @@
  * Time: 4:55 PM
  * About: This file contains the worker thread which generates the actual image of the mandelbrot to be rendered in a canvas element
  */
-
-// Extend JavaScript API with useful functions
+    // Extend JavaScript API with useful functions
 (function() {
     "use strict";
 
     if (typeof Math !== 'undefined') {
         // Map val from a coordinate plane bounded by x1, x2 onto a coordinate plane bounded by y1, y2
-            Math.map = function(val, x1, x2, y1, y2) {
+        Math.map = function(val, x1, x2, y1, y2) {
             return (val -x1)/(Math.abs(x2-x1)) * Math.abs(y2 -y1) + y1;
         }
     }
@@ -42,6 +41,24 @@
     }
 })();
 
+
+function setPixelWrapper(imageData, c, x, y) {
+    var data = imageData.data;
+    var r = 4 * (x + y * this.width);
+
+    data[r] = c[0];
+    data[r + 1] = c[1];
+    data[r + 2] = c[2];
+    data[r + 3] = c[3];
+}
+
+function getPixelWrapper(imageData, x, y) {
+    var data = imageData.data;
+    var r = 4 * (x + y * this.width);
+    return [data[r], data[r + 1], data[r + 2], data[r + 3]];
+}
+
+
 /**
  *
  * @param event
@@ -57,6 +74,7 @@
 
 self.onmessage = function(event) {
     var args = event.data;
+
 
     switch(args.message) {
         case 'generateFrame':

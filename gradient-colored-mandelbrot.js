@@ -100,7 +100,7 @@
             // update keep proportions
             keepProportions = chkMandelbrotColorMaintainRatio.is(':checked');
 
-            canvas = $('#cvsMandelbrot'); // Find the canvas
+            canvas = $('#cvsMandelbrotColor'); // Find the canvas
             canvasWidth = canvas.width();
             canvasHeight = canvas.height();
 
